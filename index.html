@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pistão Grill - Sistema de Comandas</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 30px auto; background-color: #f9f9f9; }
+    input, button, select { padding: 10px; margin: 5px 0; width: 100%; border-radius: 5px; border: 1px solid #ccc; }
+    button { background-color: #d32f2f; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background-color: #b71c1c; }
+    .box { background: white; border: 1px solid #ccc; padding: 20px; margin-top: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+    h1, h2 { color: #b71c1c; text-align: center; }
+    ul { padding-left: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Pistão Grill - Sistema Restaurante</h1>
+
+  <div class="box">
+    <h2>Abertura de Caixa</h2>
+    <input type="number" id="valorInicial" placeholder="Valor inicial do caixa (R$)">
+    <button onclick="abrirCaixa()">Abrir Caixa</button>
+    <p id="statusCaixa"></p>
+  </div>
+
+  <div class="box">
+    <h2>Nova Comanda</h2>
+    <input type="text" id="mesa" placeholder="Número ou nome da mesa">
+    <button onclick="criarComanda()">Criar Comanda</button>
+  </div>
+
+  <div class="box">
+    <h2>Itens da Comanda</h2>
+    <select id="selectComanda"></select>
+    <input type="text" id="itemNome" placeholder="Nome do item">
+    <input type="number" id="itemPreco" placeholder="Preço (R$)">
+    <button onclick="adicionarItem()">Adicionar Item</button>
+  </div>
+
+  <div class="box">
+    <h2>Comandas Abertas</h2>
+    <ul id="comandas"></ul>
+  </div>
+
+  <script>
+    let caixaAberto = false;
+    let comandas = [];
+
+    function abrirCaixa() {
+      const valor = parseFloat(document.getElementById('valorInicial').value);
+      if (!isNaN(valor)) {
+        caixaAberto = true;
+        document.getElementById('statusCaixa').innerText = `Caixa aberto com R$ ${valor.toFixed(2)}`;
+      } else {
+        alert("Informe um valor válido para abrir o caixa.");
+      }
+    }
+
+    function criarComanda() {
+      if (!caixaAberto) {
+        alert("Abra o caixa antes de criar comandas.");
+        return;
+      }
+      const mesa = document.getElementById('mesa').value.trim();
+      if (mesa === '') {
+        alert("Informe o número ou nome da mesa.");
+        return;
+      }
+      const comanda = { mesa, itens: [] };
+      comandas.push(comanda);
+      atualizarListaComandas();
+      atualizarSelectComandas();
+      document.getElementById('mesa').value = '';
+    }
+
+    function atualizarListaComandas() {
+      const lista = document.getElementById('comandas');
+      lista.innerHTML = '';
+      comandas.forEach((c, i) => {
+        const li = document.createElement('li');
+        const total = c.itens.reduce((soma, item) => soma + item.preco, 0);
+        const detalhes = c.itens.map(item => `• ${item.nome} (R$ ${item.preco.toFixed(2)})`).join('<br>');
+        li.innerHTML = `<strong>Mesa ${c.mesa}</strong> - ${c.itens.length} itens - Total: <strong>R$ ${total.toFixed(2)}</strong><br>${detalhes}`;
+        lista.appendChild(li);
+      });
+    }
+
+    function atualizarSelectComandas() {
+      const select = document.getElementById('selectComanda');
+      select.innerHTML = '';
+      comandas.forEach((c, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.text = `Mesa ${c.mesa}`;
+        select.appendChild(option);
+      });
+    }
+
+    function adicionarItem() {
+      const index = document.getElementById('selectComanda').value;
+      const nome = document.getElementById('itemNome').value.trim();
+      const preco = parseFloat(document.getElementById('itemPreco').value);
+      if (nome === '' || isNaN(preco)) {
+        alert("Preencha corretamente o nome e o preço do item.");
+        return;
+      }
+      comandas[index].itens.push({ nome, preco });
+      atualizarListaComandas();
+      document.getElementById('itemNome').value = '';
+      document.getElementById('itemPreco').value = '';
+    }
+  </script>
+</body>
+</html>
