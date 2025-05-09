@@ -2,54 +2,114 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pistão Grill - Sistema de Comandas</title>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 30px auto; background-color: #f9f9f9; }
-    input, button, select { padding: 10px; margin: 5px 0; width: 100%; border-radius: 5px; border: 1px solid #ccc; }
-    button { background-color: #d32f2f; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background-color: #b71c1c; }
-    .box { background: white; border: 1px solid #ccc; padding: 20px; margin-top: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-    h1, h2 { color: #b71c1c; text-align: center; }
-    ul { padding-left: 20px; }
+    body {
+      font-family: sans-serif;
+      background-color: #fff3e0;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    input, button, select {
+      padding: 12px;
+      margin: 6px 0;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background-color: #d32f2f;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #b71c1c;
+    }
+    .box {
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    h1, h2 {
+      color: #d32f2f;
+      text-align: center;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    @media (max-width: 600px) {
+      .box { padding: 15px; }
+      h1, h2 { font-size: 20px; }
+    }
   </style>
 </head>
 <body>
-  <h1>Pistão Grill - Sistema Restaurante</h1>
+  <div class="container">
+    <h1>Pistão Grill - Sistema Restaurante</h1>
 
-  <div class="box">
-    <h2>Abertura de Caixa</h2>
-    <input type="number" id="valorInicial" placeholder="Valor inicial do caixa (R$)">
-    <button onclick="abrirCaixa()">Abrir Caixa</button>
-    <p id="statusCaixa"></p>
-  </div>
+    <div class="box">
+      <h2>Abertura de Caixa</h2>
+      <input type="number" id="valorInicial" placeholder="Valor inicial do caixa (R$)">
+      <button onclick="abrirCaixa()">Abrir Caixa</button>
+      <p id="statusCaixa"></p>
+    </div>
 
-  <div class="box">
-    <h2>Nova Comanda</h2>
-    <input type="text" id="mesa" placeholder="Número ou nome da mesa">
-    <button onclick="criarComanda()">Criar Comanda</button>
-  </div>
+    <div class="box">
+      <h2>Nova Comanda</h2>
+      <input type="text" id="mesa" placeholder="Número ou nome da mesa">
+      <button onclick="criarComanda()">Criar Comanda</button>
+    </div>
 
-  <div class="box">
-    <h2>Itens da Comanda</h2>
-    <select id="selectComanda"></select>
-    <input type="text" id="itemNome" placeholder="Nome do item">
-    <input type="number" id="itemPreco" placeholder="Preço (R$)">
-    <button onclick="adicionarItem()">Adicionar Item</button>
-  </div>
+    <div class="box">
+      <h2>Itens da Comanda</h2>
+      <select id="selectComanda"></select>
+      <input type="text" id="itemNome" placeholder="Nome do item">
+      <input type="number" id="itemPreco" placeholder="Preço (R$)">
+      <input type="number" id="descontoComanda" placeholder="Desconto (R$)">
+      <input type="number" id="taxaServico" placeholder="Taxa de Serviço (R$)">
+      <button onclick="adicionarItem()">Adicionar Item</button>
+      <button onclick="atualizarDescontoETaxa()">Atualizar Desconto e Taxa</button>
+    </div>
 
-  <div class="box">
-    <h2>Comandas Abertas</h2>
-    <ul id="comandas"></ul>
+    <div class="box">
+      <h2>Comandas Abertas</h2>
+      <ul id="comandas"></ul>
+    </div>
+
+    <div class="box">
+      <h2>Comandas Fechadas</h2>
+      <ul id="comandasFechadas"></ul>
+    </div>
+
+    <div class="box">
+      <h2>Fechamento de Caixa</h2>
+      <button onclick="fecharCaixa()">Fechar Caixa</button>
+      <p id="resumoCaixa"></p>
+    </div>
   </div>
 
   <script>
     let caixaAberto = false;
     let comandas = [];
+    let valorInicialCaixa = 0;
 
     function abrirCaixa() {
       const valor = parseFloat(document.getElementById('valorInicial').value);
       if (!isNaN(valor)) {
         caixaAberto = true;
+        valorInicialCaixa = valor;
         document.getElementById('statusCaixa').innerText = `Caixa aberto com R$ ${valor.toFixed(2)}`;
       } else {
         alert("Informe um valor válido para abrir o caixa.");
@@ -66,7 +126,7 @@
         alert("Informe o número ou nome da mesa.");
         return;
       }
-      const comanda = { mesa, itens: [] };
+      const comanda = { mesa, itens: [], desconto: 0, taxa: 0, status: 'aberta' };
       comandas.push(comanda);
       atualizarListaComandas();
       atualizarSelectComandas();
@@ -75,13 +135,32 @@
 
     function atualizarListaComandas() {
       const lista = document.getElementById('comandas');
+      const listaFechadas = document.getElementById('comandasFechadas');
       lista.innerHTML = '';
+      listaFechadas.innerHTML = '';
       comandas.forEach((c, i) => {
-        const li = document.createElement('li');
-        const total = c.itens.reduce((soma, item) => soma + item.preco, 0);
+        const subtotal = c.itens.reduce((soma, item) => soma + item.preco, 0);
+        const total = subtotal - c.desconto + c.taxa;
         const detalhes = c.itens.map(item => `• ${item.nome} (R$ ${item.preco.toFixed(2)})`).join('<br>');
-        li.innerHTML = `<strong>Mesa ${c.mesa}</strong> - ${c.itens.length} itens - Total: <strong>R$ ${total.toFixed(2)}</strong><br>${detalhes}`;
-        lista.appendChild(li);
+        const li = document.createElement('li');
+
+        if (c.status === 'aberta') {
+          li.innerHTML = `<strong>Mesa ${c.mesa}</strong><br>${detalhes}<br>
+          Subtotal: R$ ${subtotal.toFixed(2)}<br>
+          Desconto: R$ ${c.desconto.toFixed(2)}<br>
+          Taxa de Serviço: R$ ${c.taxa.toFixed(2)}<br>
+          <strong>Total: R$ ${total.toFixed(2)}</strong><br>
+          <button onclick="fecharComanda(${i})">Fechar Comanda</button>`;
+          lista.appendChild(li);
+        } else {
+          li.innerHTML = `<strong>Mesa ${c.mesa}</strong> - Fechada<br>${detalhes}<br>
+          Subtotal: R$ ${subtotal.toFixed(2)}<br>
+          Desconto: R$ ${c.desconto.toFixed(2)}<br>
+          Taxa de Serviço: R$ ${c.taxa.toFixed(2)}<br>
+          <strong>Total: R$ ${total.toFixed(2)}</strong><br>
+          <button onclick="reabrirComanda(${i})">Reabrir Comanda</button>`;
+          listaFechadas.appendChild(li);
+        }
       });
     }
 
@@ -89,10 +168,12 @@
       const select = document.getElementById('selectComanda');
       select.innerHTML = '';
       comandas.forEach((c, i) => {
-        const option = document.createElement('option');
-        option.value = i;
-        option.text = `Mesa ${c.mesa}`;
-        select.appendChild(option);
+        if (c.status === 'aberta') {
+          const option = document.createElement('option');
+          option.value = i;
+          option.text = `Mesa ${c.mesa}`;
+          select.appendChild(option);
+        }
       });
     }
 
@@ -100,14 +181,68 @@
       const index = document.getElementById('selectComanda').value;
       const nome = document.getElementById('itemNome').value.trim();
       const preco = parseFloat(document.getElementById('itemPreco').value);
+      const desconto = parseFloat(document.getElementById('descontoComanda').value) || 0;
+      const taxa = parseFloat(document.getElementById('taxaServico').value) || 0;
       if (nome === '' || isNaN(preco)) {
         alert("Preencha corretamente o nome e o preço do item.");
         return;
       }
       comandas[index].itens.push({ nome, preco });
+      comandas[index].desconto = desconto;
+      comandas[index].taxa = taxa;
       atualizarListaComandas();
       document.getElementById('itemNome').value = '';
       document.getElementById('itemPreco').value = '';
+    }
+
+    function atualizarDescontoETaxa() {
+      const index = document.getElementById('selectComanda').value;
+      const desconto = parseFloat(document.getElementById('descontoComanda').value) || 0;
+      const taxa = parseFloat(document.getElementById('taxaServico').value) || 0;
+
+      if (index === '') {
+        alert("Selecione uma comanda.");
+        return;
+      }
+
+      comandas[index].desconto = desconto;
+      comandas[index].taxa = taxa;
+      atualizarListaComandas();
+    }
+
+    function fecharComanda(index) {
+      comandas[index].status = 'fechada';
+      atualizarListaComandas();
+      atualizarSelectComandas();
+    }
+
+    function reabrirComanda(index) {
+      comandas[index].status = 'aberta';
+      atualizarListaComandas();
+      atualizarSelectComandas();
+    }
+
+    function fecharCaixa() {
+      if (!caixaAberto) {
+        alert("Caixa ainda não foi aberto.");
+        return;
+      }
+      const totalComandas = comandas.filter(c => c.status === 'fechada').reduce((soma, comanda) => {
+        const subtotal = comanda.itens.reduce((s, item) => s + item.preco, 0);
+        return soma + subtotal - comanda.desconto + comanda.taxa;
+      }, 0);
+      const totalFinal = valorInicialCaixa + totalComandas;
+      document.getElementById('resumoCaixa').innerHTML =
+        `<strong>Resumo do Caixa:</strong><br>
+        Valor Inicial: R$ ${valorInicialCaixa.toFixed(2)}<br>
+        Total de Comandas Fechadas: R$ ${totalComandas.toFixed(2)}<br>
+        <strong>Total Final em Caixa: R$ ${totalFinal.toFixed(2)}</strong>`;
+      caixaAberto = false;
+      comandas = [];
+      document.getElementById('statusCaixa').innerText = '';
+      document.getElementById('valorInicial').value = '';
+      document.getElementById('selectComanda').innerHTML = '';
+      atualizarListaComandas();
     }
   </script>
 </body>
